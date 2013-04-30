@@ -32,13 +32,6 @@
 
 #pragma mark - Array additions
 
-@interface NSMutableArray (Additions)
-
-- (BOOL)hasTag:(NSString *)string;
-- (BOOL)removeTag:(NSString *)string;
-
-@end
-
 @implementation NSMutableArray (Additions)
 
 - (BOOL)hasTag:(NSString *)string
