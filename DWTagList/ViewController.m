@@ -14,10 +14,16 @@
 
 @implementation ViewController
 
-- (void)selectedTag:(NSString *)tagName{
-    
-    UIAlertView *al = [[UIAlertView alloc] initWithTitle:@"Message" message:[NSString stringWithFormat:@"You tapped tag %@",tagName] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles: nil];
-    [al show];
+- (void)didSelectTag:(NSString *)tagName
+{
+    NSLog(@"didSelectTag: %@", tagName);
+    NSLog(@"\n\nselectedTags: %@", [tagList selectedTags]);
+}
+
+- (void)didDeselectTag:(NSString *)tagName
+{
+    NSLog(@"didDeselectTag: %@", tagName);
+    NSLog(@"\n\nselectedTags: %@", [tagList selectedTags]);
 }
 
 - (void)viewDidLoad

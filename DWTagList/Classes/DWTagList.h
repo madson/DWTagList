@@ -11,28 +11,24 @@
 
 @required
 
-- (void)selectedTag:(NSString*)tagName;
+- (void)didSelectTag:(NSString *)tagName;
+- (void)didDeselectTag:(NSString *)tagName;
 
 @end
 
 @interface DWTagList : UIScrollView
 {
-    UIView *view;
-    NSArray *textArray;
     CGSize sizeFit;
-    UIColor *lblBackgroundColor;
 }
 
-@property (nonatomic) BOOL viewOnly;
-@property (nonatomic, strong) UIView *view;
-@property (nonatomic, strong) NSArray *textArray;
-@property (nonatomic, weak) id<DWTagListDelegate> tagDelegate;
-@property (nonatomic, strong) UIColor *highlightedBackgroundColor;
+@property (nonatomic, strong) id<DWTagListDelegate> tagDelegate;
 @property (nonatomic) BOOL automaticResize;
 
-- (void)setLabelBackgroundColor:(UIColor *)color;
-- (void)setLabelHighlightColor:(UIColor *)color;
 - (void)setTags:(NSArray *)array;
+
+- (void)setSelectedTags:(NSArray *)array;
+- (NSArray *)selectedTags;
+
 - (void)display;
 - (CGSize)fittedSize;
 

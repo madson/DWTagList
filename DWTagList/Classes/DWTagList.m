@@ -8,209 +8,274 @@
 #import "DWTagList.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define CORNER_RADIUS 10.0f
-#define LABEL_MARGIN 5.0f
-#define BOTTOM_MARGIN 5.0f
-#define FONT_SIZE 13.0f
-#define HORIZONTAL_PADDING 7.0f
-#define VERTICAL_PADDING 3.0f
-#define BACKGROUND_COLOR [UIColor colorWithRed:0.93 green:0.93 blue:0.93 alpha:1.00]
-#define TEXT_COLOR [UIColor blackColor]
-#define TEXT_SHADOW_COLOR [UIColor whiteColor]
-#define TEXT_SHADOW_OFFSET CGSizeMake(0.0f, 1.0f)
-#define BORDER_COLOR [UIColor lightGrayColor].CGColor
-#define BORDER_WIDTH 1.0f
-#define HIGHLIGHTED_BACKGROUND_COLOR [UIColor colorWithRed:0.40 green:0.80 blue:1.00 alpha:0.5]
-#define DEFAULT_AUTOMATIC_RESIZE NO
+#define CORNER_RADIUS                7.0f
+#define LABEL_MARGIN                 5.0f
+#define BOTTOM_MARGIN                5.0f
+#define FONT_SIZE                    15.0f
+#define HORIZONTAL_PADDING           7.0f
+#define VERTICAL_PADDING             7.0f
 
-@interface DWTagList()
+#define BACKGROUND_COLOR_SELECTED    [UIColor colorWithRed:209.0 / 255.0 green:59.0 / 255.0 blue:66.0 / 255.0 alpha:1.00]
+#define TEXT_COLOR_SELECTED          [UIColor whiteColor]
+#define TEXT_SHADOW_COLOR_SELECTED   [UIColor blackColor]
+#define BORDER_COLOR_SELECTED        [UIColor colorWithRed:189.0 / 255.0 green:29.0 / 255.0 blue:46.0 / 255.0 alpha:1.00].CGColor
 
-- (void)touchedTag:(id)sender;
+#define BACKGROUND_COLOR             [UIColor lightGrayColor]
+#define TEXT_COLOR                   [UIColor blackColor]
+#define TEXT_SHADOW_COLOR            [UIColor whiteColor]
+#define BORDER_COLOR                 [UIColor grayColor].CGColor
+
+#define TEXT_SHADOW_OFFSET           CGSizeMake(0.0f, 1.0f)
+#define BORDER_WIDTH                 1.0f
+#define HIGHLIGHTED_BACKGROUND_COLOR [UIColor colorWithRed:209.0 / 255.0 green:59.0 / 255.0 blue:66.0 / 255.0 alpha:1.00]
+#define DEFAULT_AUTOMATIC_RESIZE     NO
+
+#pragma mark - Array additions
+
+@interface NSMutableArray (Additions)
+
+- (BOOL)hasTag:(NSString *)string;
+- (BOOL)removeTag:(NSString *)string;
 
 @end
 
-@implementation DWTagList
+@implementation NSMutableArray (Additions)
 
-@synthesize view, textArray, automaticResize;
-@synthesize tagDelegate = _tagDelegate;
+- (BOOL)hasTag:(NSString *)string
+{
+    for (NSString *str in self)
+    {
+        if ([str isEqualToString:string])
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+- (BOOL)removeTag:(NSString *)string
+{
+    for (NSString *str in self)
+    {
+        if ([str isEqualToString:string])
+        {
+            [self removeObject:str];
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+@end
+
+#pragma mark - Private methods
+
+@interface DWTagList ()
+
+- (void)touchedTag:(id)sender;
+
+@property (nonatomic, strong) NSArray *tagsArray;
+@property (nonatomic, strong) NSMutableArray *selectedTagsArray;
+
+@end
+
+#pragma mark - Implementation
+
+@implementation DWTagList
 
 - (id)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
-    if (self) {
-        [self addSubview:view];
-        [self setClipsToBounds:YES];
-        self.automaticResize = DEFAULT_AUTOMATIC_RESIZE;
-        self.highlightedBackgroundColor = HIGHLIGHTED_BACKGROUND_COLOR;
+
+    if (self)
+    {
+        self.clipsToBounds = YES;
+        self.automaticResize = YES;
     }
+
     return self;
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
     self = [super initWithCoder:aDecoder];
-    if (self) {
-        [self addSubview:view];
-        [self setClipsToBounds:YES];
-        self.highlightedBackgroundColor = HIGHLIGHTED_BACKGROUND_COLOR;
+
+    if (self)
+    {
+        self.clipsToBounds = YES;
+        self.automaticResize = YES;
     }
+
     return self;
 }
+
+#pragma mark - Actions
 
 - (void)setTags:(NSArray *)array
 {
-    textArray = [[NSArray alloc] initWithArray:array];
-    sizeFit = CGSizeZero;
+    self.tagsArray = [array copy];
+
     [self display];
-    if (automaticResize) {
+
+    if (_automaticResize)
+    {
         self.frame = CGRectMake(self.frame.origin.x, self.frame.origin.y, sizeFit.width, sizeFit.height);
     }
 }
 
-- (void)setLabelBackgroundColor:(UIColor *)color
+- (void)setSelectedTags:(NSArray *)array
 {
-    lblBackgroundColor = color;
-    [self display];
-}
+    self.selectedTagsArray = [array mutableCopy];
 
-- (void)setLabelHighlightColor:(UIColor *)color
-{
-    self.highlightedBackgroundColor = color;
     [self display];
-}
 
-- (void)setViewOnly:(BOOL)viewOnly
-{
-    if (_viewOnly != viewOnly) {
-        _viewOnly = viewOnly;
-        [self display];
+    if (_automaticResize)
+    {
+        self.frame = CGRectMake(self.frame.origin.x, self.frame.origin.y, sizeFit.width, sizeFit.height);
     }
+}
+
+- (NSArray *)selectedTags
+{
+    return self.selectedTagsArray;
 }
 
 - (void)touchedTag:(id)sender
 {
-    UITapGestureRecognizer *t = (UITapGestureRecognizer *)sender;
-    UILabel *label = (UILabel *)t.view;
-    if(label && self.tagDelegate && [self.tagDelegate respondsToSelector:@selector(selectedTag:)])
-        [self.tagDelegate selectedTag:label.text];
+    UITapGestureRecognizer *tagGesture = (UITapGestureRecognizer *)sender;
+    
+    UILabel *label = (UILabel *)tagGesture.view;
+    
+    if (_selectedTagsArray == nil)
+    {
+        self.selectedTagsArray = NSMutableArray.new;
+    }
+
+    if ([_selectedTagsArray hasTag:label.text])
+    {
+        [_selectedTagsArray removeTag:label.text];
+
+        if (label && self.tagDelegate && [self.tagDelegate respondsToSelector:@selector(didDeselectTag:)])
+        {
+            [self.tagDelegate didDeselectTag:label.text];
+        }
+    }
+    else
+    {
+        [_selectedTagsArray addObject:label.text];
+        
+        if (label && self.tagDelegate && [self.tagDelegate respondsToSelector:@selector(didSelectTag:)])
+        {
+            [self.tagDelegate didSelectTag:label.text];
+        }
+    }
+        
+    [self display];
 }
+
+#pragma mark - View actions
 
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     [self display];
 }
 
 - (void)display
 {
-    for (UILabel *subview in [self subviews]) {
+    for (UILabel *subview in [self subviews])
+    {
         [subview removeFromSuperview];
     }
+
     float totalHeight = 0;
     CGRect previousFrame = CGRectZero;
     BOOL gotPreviousFrame = NO;
-    for (NSString *text in textArray) {
-        CGSize textSize = [text sizeWithFont:[UIFont systemFontOfSize:FONT_SIZE] constrainedToSize:CGSizeMake(self.frame.size.width, FONT_SIZE) lineBreakMode:NSLineBreakByTruncatingTail];
-        textSize.width += HORIZONTAL_PADDING*2;
-        textSize.height += VERTICAL_PADDING*2;
+
+    for (NSString *text in _tagsArray)
+    {
+        UIFont *font = [UIFont systemFontOfSize:FONT_SIZE];
+        CGSize size = CGSizeMake(self.frame.size.width, FONT_SIZE);
+        CGSize textSize = [text sizeWithFont:font constrainedToSize:size lineBreakMode:NSLineBreakByTruncatingTail];
+        textSize.width += HORIZONTAL_PADDING * 2;
+        textSize.height += VERTICAL_PADDING * 2;
         UILabel *label = nil;
-        if (!gotPreviousFrame) {
+
+        if (!gotPreviousFrame)
+        {
             label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, textSize.width, textSize.height)];
             totalHeight = textSize.height;
-        } else {
+        }
+        else
+        {
             CGRect newRect = CGRectZero;
-            if (previousFrame.origin.x + previousFrame.size.width + textSize.width + LABEL_MARGIN > self.frame.size.width) {
+
+            if (previousFrame.origin.x + previousFrame.size.width + textSize.width + LABEL_MARGIN > self.frame.size.width)
+            {
                 newRect.origin = CGPointMake(0, previousFrame.origin.y + textSize.height + BOTTOM_MARGIN);
                 totalHeight += textSize.height + BOTTOM_MARGIN;
-            } else {
+            }
+            else
+            {
                 newRect.origin = CGPointMake(previousFrame.origin.x + previousFrame.size.width + LABEL_MARGIN, previousFrame.origin.y);
             }
+
             newRect.size = textSize;
             label = [[UILabel alloc] initWithFrame:newRect];
         }
+
         previousFrame = label.frame;
         gotPreviousFrame = YES;
         [label setFont:[UIFont systemFontOfSize:FONT_SIZE]];
-        if (!lblBackgroundColor) {
-            [label setBackgroundColor:BACKGROUND_COLOR];
-        } else {
-            [label setBackgroundColor:lblBackgroundColor];
-        }
-        
+
+        [label setBackgroundColor:BACKGROUND_COLOR];
+
         CGRect lRect = label.frame;
         lRect.size.width = MIN(label.frame.size.width, self.frame.size.width);
-        [label setFrame:lRect];
         
-        [label setTextColor:TEXT_COLOR];
+        [label setFrame:lRect];
         [label setText:text];
         [label setTextAlignment:NSTextAlignmentCenter];
-        [label setShadowColor:TEXT_SHADOW_COLOR];
         [label setShadowOffset:TEXT_SHADOW_OFFSET];
+        
         [label.layer setMasksToBounds:YES];
         [label.layer setCornerRadius:CORNER_RADIUS];
-        [label.layer setBorderColor:BORDER_COLOR];
-        [label.layer setBorderWidth: BORDER_WIDTH];
-        
-        //Davide Cenzi, added gesture recognizer to label
-        UITapGestureRecognizer* gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchedTag:)];
-        // if labelView is not set userInteractionEnabled, you must do so
+        [label.layer setBorderWidth:BORDER_WIDTH];
+
+        if ([_selectedTagsArray hasTag:text])
+        {
+            [label setTextColor:TEXT_COLOR_SELECTED];
+            [label setShadowColor:TEXT_SHADOW_COLOR_SELECTED];
+            [label setBackgroundColor:BACKGROUND_COLOR_SELECTED];
+            [label.layer setBorderColor:BORDER_COLOR_SELECTED];
+        }
+        else
+        {
+            [label setTextColor:TEXT_COLOR];
+            [label setShadowColor:TEXT_SHADOW_COLOR];
+            [label setBackgroundColor:BACKGROUND_COLOR];
+            [label.layer setBorderColor:BORDER_COLOR];
+        }
+
+        UITapGestureRecognizer *gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchedTag:)];
         [label setUserInteractionEnabled:YES];
         [label addGestureRecognizer:gesture];
-        
-        [self addSubview:label];
 
-        if (!_viewOnly) {
-            UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-            [button setFrame:label.frame];
-            [button setAccessibilityLabel:label.text];
-            [button.layer setCornerRadius:CORNER_RADIUS];
-            [button addTarget:self action:@selector(touchDownInside:) forControlEvents:UIControlEventTouchDown];
-            [button addTarget:self action:@selector(touchUpInside:) forControlEvents:UIControlEventTouchUpInside];
-            [button addTarget:self action:@selector(touchDragExit:) forControlEvents:UIControlEventTouchDragExit];
-            [button addTarget:self action:@selector(touchDragInside:) forControlEvents:UIControlEventTouchDragInside];
-            [self addSubview:button];
-        }
+        [self addSubview:label];
     }
+
     sizeFit = CGSizeMake(self.frame.size.width, totalHeight + 1.0f);
+    
     self.contentSize = sizeFit;
 }
 
 - (CGSize)fittedSize
 {
     return sizeFit;
-}
-
-- (void)touchDownInside:(id)sender
-{
-    UIButton *button = (UIButton*)sender;
-    [button setBackgroundColor:self.highlightedBackgroundColor];
-}
-
-- (void)touchUpInside:(id)sender
-{
-    UIButton *button = (UIButton*)sender;
-    [button setBackgroundColor:[UIColor clearColor]];
-    if(button && self.tagDelegate && [self.tagDelegate respondsToSelector:@selector(selectedTag:)])
-        [self.tagDelegate selectedTag:button.accessibilityLabel];
-}
-
-- (void)touchDragExit:(id)sender
-{
-    UIButton *button = (UIButton*)sender;
-    [button setBackgroundColor:[UIColor clearColor]];
-}
-
-- (void)touchDragInside:(id)sender
-{
-    UIButton *button = (UIButton*)sender;
-    [button setBackgroundColor:self.highlightedBackgroundColor];
-}
-
-- (void)dealloc
-{
-    view = nil;
-    textArray = nil;
-    lblBackgroundColor = nil;
 }
 
 @end
