@@ -79,32 +79,6 @@
 
 @implementation DWTagList
 
-- (id)initWithFrame:(CGRect)frame
-{
-    self = [super initWithFrame:frame];
-
-    if (self)
-    {
-        self.clipsToBounds = YES;
-        self.automaticResize = YES;
-    }
-
-    return self;
-}
-
-- (id)initWithCoder:(NSCoder *)aDecoder
-{
-    self = [super initWithCoder:aDecoder];
-
-    if (self)
-    {
-        self.clipsToBounds = YES;
-        self.automaticResize = YES;
-    }
-
-    return self;
-}
-
 #pragma mark - Actions
 
 - (void)setTags:(NSArray *)array
