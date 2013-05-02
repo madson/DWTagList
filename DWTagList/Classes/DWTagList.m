@@ -254,9 +254,12 @@
             [label.layer setBorderColor:BORDER_COLOR];
         }
 
-        UITapGestureRecognizer *gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchedTag:)];
-        [label setUserInteractionEnabled:YES];
-        [label addGestureRecognizer:gesture];
+        if (self.tagDelegate)
+        {
+            UITapGestureRecognizer *gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchedTag:)];
+            [label setUserInteractionEnabled:YES];
+            [label addGestureRecognizer:gesture];
+        }
 
         [self addSubview:label];
     }
